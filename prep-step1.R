@@ -43,7 +43,13 @@ option_list <- list(
     make_option("--invNormalize", type="logical",default=FALSE,
                 help="inverse normalize [default='FALSE']"),
     make_option("--memoryChunk",type="numeric",default=4,
-                help="memory chunk [default=4]")
+                help="memory chunk [default=4]"),
+    make_option("--IsOverwriteVarianceRatioFile",type="logical",default=TRUE,
+                help="overwrite variance ratio file of the same name [default=TRUE]"),
+    make_option("--IsSparseKin",type="logical",default=FALSE,
+                help="Is kinship matrix sparse [default=FALSE]"),
+    make_option("--isCovariateTransform",type="logical",default=FALSE,
+                help="Transform covariates? [default=FALSE]")
 )
 ## list of options
 parser <- OptionParser(usage="%prog [options]", option_list=option_list)
@@ -81,7 +87,7 @@ script<-paste(sep="/",opt$codeDir,"SAIGE_step1.R")
 
 for (i in 1:length(trait.list.final)) {
     output<-paste(sep="/",opt$outDir,trait.list.final[i])
-    current.cmd <- paste0("jobs[",i,"]=\"/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --plinkFile ",opt$plinkFile," --phenoFile ",opt$phenoFile," --phenoCol ",trait.list.final[i]," --sampleIDColinphenoFile ",opt$sampleIDColinphenoFile," --covarColList ",opt$covarColList," --traitType ",opt$traitType," --invNorm ",opt$invNorm," --minMAFforGRM ",opt$minMAFforGRM," --skipModelFitting ",opt$skipModelFitting," --outputPrefix ", output," --numMarkers ",opt$numMarkers," --nThreads ",opt$nThreads," --memoryChunk ",opt$memoryChunk,"\"")
+    current.cmd <- paste0("jobs[",i,"]=\"/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --plinkFile ",opt$plinkFile," --phenoFile ",opt$phenoFile," --phenoCol ",trait.list.final[i]," --sampleIDColinphenoFile ",opt$sampleIDColinphenoFile," --covarColList ",opt$covarColList," --traitType ",opt$traitType," --invNorm ",opt$invNorm," --minMAFforGRM ",opt$minMAFforGRM," --skipModelFitting ",opt$skipModelFitting," --IsOverwriteVarianceRatioFile ", opt$IsOverwriteVarianceRatioFile, " --IsSparseKin ", opt$IsSparseKin, " --isCovariateTransform ",opt$isCovariateTransform," --outputPrefix ", output," --numMarkers ",opt$numMarkers," --nThreads ",opt$nThreads," --memoryChunk ",opt$memoryChunk,"\"")
   slurm.cmd <- c(slurm.cmd,current.cmd)
 }
 

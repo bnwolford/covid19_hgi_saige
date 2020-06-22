@@ -1,7 +1,6 @@
 rm(list=ls())
 
-options(echo=TRUE, stringsAsFactors=F) # if you want see commands in output file
-.libPaths( c( .libPaths(), "/net/dumbo/home/anitapan/bin/Rlibs"))
+options(stringsAsFactors=F) 
 
 library(optparse)
 library(data.table)
@@ -53,21 +52,28 @@ for (i in 1:length(slurm.cmd)) {
 
 
 slurm.cmd <- c("#!/bin/bash",
-paste0("#SBATCH --array=1-",length(slurm.cmd)),
-"#SBATCH --job-name=step2",
-"#SBATCH --partition=t2dgenes,got2d,esp,main,genesforgood,nomosix",
-"#SBATCH --cpus-per-task=8",
-"#SBATCH --mem-per-cpu=1000",
-"#SBATCH --time=400:00:00",
-paste0("#SBATCH --output=",opt$logOutDir,"/step2_%a.log"),
-"declare -a jobs",
-slurm.cmd,
-"eval ${jobs[${SLURM_ARRAY_TASK_ID}]}")
+               paste0("#SBATCH --array=1-",length(slurm.cmd)),
+               paste0("#SBATCH --job-name=",opt$jobName),
+               paste0("#SBATCH --partition=",opt$partition),
+               paste0("#SBATCH --cpus-per-task=",opt$nThreads),
+               "#SBATCH --mem-per-cpu=500",
+               paste0("#SBATCH --time=",opt$time),
+               paste0("#SBATCH --error=",opt$logOutDir,"/",opt$jobName,"_%a.err"),
+               paste0("#SBATCH --output=",opt$logOutDir,"/",opt$jobName,"_%a.out"),
+               "declare -a jobs",
+               slurm.cmd,
+               "eval ${jobs[${SLURM_ARRAY_TASK_ID}]}")
 
 if (opt$analyzeX) {
-  write(slurm.cmd,"submit-SAIGE-step2-chrX.sh")
+    file<-paste0("submit_SAIGE_chrX_",opt$jobName,".sh")
+    write(slurm.cmd,file)
+    cat("You can use the follow cmd to submit jobs to slurm.\n")
+    cat(paste0"sbatch ",file))
 }
 
 if (!opt$analyzeX) {
-  write(slurm.cmd,"submit-SAIGE-step2.sh")
+    file<-paste0("submit_SAIGE_",opt$jobName,".sh")
+    write(slurm.cmd,file)
+    cat("You can use the follow cmd to submit jobs to slurm.\n")
+    cat(paste0"sbatch ",file))
 }

@@ -7,6 +7,8 @@ options(stringsAsFactors=F)
 
 ## load R libraries
 library("SAIGE",lib.loc="/net/snowwhite/home/bwolford/SAIGE")
+#.libPaths( c( .libPaths(), "/net/dumbo/home/anitapan/bin/Rlibs"))
+library(SAIGE)
 require(optparse) #install.packages("optparse")
 
 ## print versions
@@ -43,8 +45,12 @@ option_list <- list(
               help="inverse normalize [default='FALSE']"),
   make_option("--memoryChunk",type="numeric",default=4,
               help="memory chunk [default=4]"),
+  make_option("--IsSparseKin",type="logical",default=FALSE,
+             help="Is kinship matrix sparse [default=FALSE]"),
+  make_option("--isCovariateTransform",type="logical",default=FALSE,
+              help="Transform covariates? [default=FALSE]"),
   make_option("--IsOverwriteVarianceRatioFile",type="logical",default=TRUE,
-              help="overwrite variance ratio file of the same name [default=TRUE]")
+              help="Overwritte existing variance ratio file [default=TRUE]")
   
 )
 ## list of options
@@ -67,15 +73,16 @@ fitNULLGLMM(plinkFile=opt$plinkFile,
             traitType = opt$traitType,
             invNormalize = opt$invNormalize,
             covarColList = covarCols,
-            qCovarCol = NULL,
+            IsSparseKin = opt$IsSparseKin,
+            isCovariateTransform = opt$isCovariateTransform,
+            IsOverwriteVarianceRatioFile = opt$IsOverwriteVarianceRatioFile,
             sampleIDColinphenoFile = opt$sampleIDColinphenoFile,
             minMAFforGRM=opt$minMAFforGRM,
             nThreads = opt$nThreads,
             numMarkers = opt$numMarkers,
             skipModelFitting = opt$skipModelFitting,
             outputPrefix = opt$outputPrefix,
-            memoryChunk = opt$memoryChunk,
-            IsOverwriteVarianceRatioFile=opt$IsOverwriteVarianceRatioFile
-           )
+            memoryChunk = opt$memoryChunk)
+
 
 
