@@ -1,41 +1,61 @@
+### June 2020 Anita Pandit & Brooke Wolford
+
 rm(list=ls())
+options(stringsAsFactors=F)
 
-options(echo=TRUE, stringsAsFactors=F) # if you want see commands in output file
-.libPaths( c( .libPaths(), "/net/dumbo/home/anitapan/bin/Rlibs"))
-
+## load R libraries 
 library(optparse)
 library(data.table)
 
 option_list <- list(
-  make_option("--traitList", type="character",default="",
-              help="path to list of phenotypes; no header"),
-  make_option("--logOutDir", type="character",default="",
-              help="path to output folder for logs"),
-  make_option("--genoFile", type="character",default="",
-              help="path to the genotype file (.bed format, filtered/pruned, autosomes only)"),
-  make_option("--phenoFile", type="character",default="",
-              help="path to the phenotype file"),
-  make_option("--covarList",type="character",default="",
-              help="comma separated list of covariate column names"),
-  make_option("--sampleID", type="character", default="",
-              help="column name of the sample ID"),
-  make_option("--binary", type="logical", default=FALSE,
-              help="whether phenotype is binary or quantitative, default is F"),
-  make_option("--invNorm", type="logical", default=FALSE,
-              help="whether to inverse normalize the outcome, default is F"),
-  make_option("--outDir", type="character", default="",
-              help="path to the output folder")
+    make_option("--traitList", type="character",default="",
+                help="path to list of phenotypes; no header"),
+    make_option("--partition",type="character",default="nomosix",
+                help="list of partitions for slurm (comma separated)"),
+    make_option("--time",type="character",default="12:00:00",
+                help="HH:MM:SS for tine request for slurm"),
+    make_option("--logOutDir", type="character",default=".",
+                help="path to output folder for slurm logs"),
+    make_option("--jobName",type="character",default="step1",
+                help="string for slurm log prefix and to show in slurm queue"),
+    make_option("--codeDir",type="character",default="",
+                help="path to github repo with pipeline and code"),
+    make_option("--outDir", type="character", default="",
+                help="path to the output folder"),
+    make_option("--plinkFile", type="character",default="",
+                help="path to plink file to be used for the kinship matrix"),
+    make_option("--phenoFile", type="character", default="",
+                help="path to the phenotype file, a column 'IID' is required"),
+    make_option("--covarColList", type="character", default="",
+                help="list of covariates (comma separated)"),
+    make_option("--sampleIDColinphenoFile", type="character", default="IID",
+                help="Column name of the IDs in the phenotype file"),
+    make_option("--minMAFforGRM",type="numeric",default=0.01,
+                help="minum MAF for GRM"),
+    make_option("--skipModelFitting", type="logical", default=FALSE,
+                help="skip model fitting, [default='FALSE']"),
+    make_option("--traitType", type="character", default="binary",
+                help="binary/quantitative [default=binary]"),
+    make_option("--numMarkers", type="integer", default=30,
+                help="An integer greater than 0 Number of markers to be used for estimating the variance ratio [default=30]"),
+    make_option("--nThreads", type="integer", default=16,
+                help="Number of threads"),
+    make_option("--invNormalize", type="logical",default=FALSE,
+                help="inverse normalize [default='FALSE']"),
+    make_option("--memoryChunk",type="numeric",default=4,
+                help="memory chunk [default=4]")
 )
-
+## list of options
 parser <- OptionParser(usage="%prog [options]", option_list=option_list)
-
 args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
 print(opt)
 
+
+## check for missing arguments
 try(if(length(which(opt == "")) > 0) stop("Missing arguments"))
 
-# read in trait list
+# read in trait list (pheno col in the phenotype file must match this)
 trait.list <- fread(opt$traitList,header=F)
 colnames(trait.list) <- "NAME"
 
@@ -53,25 +73,33 @@ for (i in 1:length(trait.list$NAME)) {
   }
 }
 
+
 slurm.cmd <- character()
 
+#where to find script 
+script<-paste(sep="/",opt$codeDir,"SAIGE_step1.R")
+
 for (i in 1:length(trait.list.final)) {
-  current.cmd <- paste0("jobs[",i,"]=\"Rscript /net/dumbo/home/anitapan/MGI/scripts/SAIGE/step1_spagmmat.R --genoFile ",opt$genoFile," --phenoFile ",opt$phenoFile," --pheno ",trait.list.final[i]," --sampleID ",opt$sampleID," --covarList ",opt$covarList," --binary ",opt$binary," --invNorm ",opt$invNorm," --outDir ",opt$outDir,"\"")
+    output<-paste(sep="/",opt$outDir,trait.list.final[i])
+    current.cmd <- paste0("jobs[",i,"]=\"/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --plinkFile ",opt$plinkFile," --phenoFile ",opt$phenoFile," --phenoCol ",trait.list.final[i]," --sampleIDColinphenoFile ",opt$sampleIDColinphenoFile," --covarColList ",opt$covarColList," --traitType ",opt$traitType," --invNorm ",opt$invNorm," --minMAFforGRM ",opt$minMAFforGRM," --skipModelFitting ",opt$skipModelFitting," --outputPrefix ", output," --numMarkers ",opt$numMarkers," --nThreads ",opt$nThreads," --memoryChunk ",opt$memoryChunk,"\"")
   slurm.cmd <- c(slurm.cmd,current.cmd)
 }
 
-
-slurm.cmd <- c("#!/bin/bash",
+cat(slurm.cmd)
+sbatch.cmd <- c("#!/bin/bash",
 paste0("#SBATCH --array=1-",length(trait.list.final)),
-"#SBATCH --job-name=step1",
-"#SBATCH --partition=t2dgenes,got2d,esp,main,genesforgood,nomosix",
-"#SBATCH --cpus-per-task=16",
+paste0("#SBATCH --job-name=",opt$jobName),
+paste0("#SBATCH --partition=",opt$partition),
+paste0("#SBATCH --cpus-per-task=",opt$nThreads),
 "#SBATCH --mem-per-cpu=500",
-"#SBATCH --time=400:00:00",
-paste0("#SBATCH --output=",opt$logOutDir,"/step1_%a.log"),
+paste0("#SBATCH --time=",opt$time),
+paste0("#SBATCH --error=",opt$logOutDir,"/",opt$jobName,"_%a.err"),
+paste0("#SBATCH --output=",opt$logOutDir,"/",opt$jobName,"_%a.out"),
 "declare -a jobs",
 slurm.cmd,
 "eval ${jobs[${SLURM_ARRAY_TASK_ID}]}")
 
 
-write(slurm.cmd,"submit-SAIGE-step1.sh")
+write(sbatch.cmd,"submit-SAIGE-step1.sh")
+cat("You can use the follow cmd to submit jobs to slurm.\n")
+cat("sbatch submit-SAIGE-step1.sh")
