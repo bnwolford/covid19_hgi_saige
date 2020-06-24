@@ -60,15 +60,12 @@ option_list <- list(
   make_option("--vcfField",type="character",default="DS",
               help="genotype or dosage field"),
   make_option("--chrom",type="character",default="",
-              help="chromosome string")
+              help="chromosome string"),
   make_option("--start", type="numeric", default=1,
               help="start position"),
   make_option("--end", type="numeric", default=250000000,
               help="end position")
-  )
-              
-))
-
+)
 parser <- OptionParser(usage="%prog [options]", option_list=option_list)
 
 args <- parse_args(parser, positional_arguments = 0)
@@ -120,11 +117,12 @@ if (opt$filetype=="BGEN") {
     
 } else if (opt$filetype=="VCF") {
 
-    SPAGMMATtest(vcfFile = opt$vcfFile
-                 vcfFileIndex = opt$vcfFileIndex
+    SPAGMMATtest(vcfFile = opt$vcfFile,
+                 vcfFileIndex = opt$vcfFileIndex,
                  vcfField = opt$vcfField,
                  chrom=opt$chrom,
-                 minMAF=opt$minMAF,
+                 start=opt$start,
+                 end=opt$end,
                  sampleFile=opt$sampleFile,
                  GMMATmodelFile=opt$GMMATmodelFile,
                  varianceRatioFile=opt$varianceRatioFile,
@@ -148,7 +146,7 @@ if (opt$filetype=="BGEN") {
                  varianceRatioFile=opt$varianceRatioFile,
                  SAIGEOutputFile=opt$SAIGEOutputFile,
                  IsOutputAFinCaseCtrl=TRUE,
-                 numLinesOutput=100
+                 numLinesOutput=100,
                  IsOutputAFinCaseCtrl=TRUE,
                  minMAC=opt$minMAC,
                  minMAF=opt$minMAF

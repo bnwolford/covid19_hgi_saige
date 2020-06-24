@@ -12,6 +12,8 @@ option_list <- list(
                 help="path to list of phenotypes; no header"),
     make_option("--partition",type="character",default="nomosix",
                 help="list of partitions for slurm (comma separated)"),
+    make_option("--memPerCPU",type="integer",default=12,
+                help="memory per CPU for slurm [default=12]"),
     make_option("--time",type="character",default="12:00:00",
                 help="HH:MM:SS for tine request for slurm"),
     make_option("--logOutDir", type="character",default=".",
@@ -97,7 +99,7 @@ paste0("#SBATCH --array=1-",length(trait.list.final)),
 paste0("#SBATCH --job-name=",opt$jobName),
 paste0("#SBATCH --partition=",opt$partition),
 paste0("#SBATCH --cpus-per-task=",opt$nThreads),
-"#SBATCH --mem-per-cpu=500",
+paste0("#SBATCH --mem-per-cpu=",opt$memPerCPU),
 paste0("#SBATCH --time=",opt$time),
 paste0("#SBATCH --error=",opt$logOutDir,"/",opt$jobName,"_%a.err"),
 paste0("#SBATCH --output=",opt$logOutDir,"/",opt$jobName,"_%a.out"),
@@ -105,7 +107,7 @@ paste0("#SBATCH --output=",opt$logOutDir,"/",opt$jobName,"_%a.out"),
 slurm.cmd,
 "eval ${jobs[${SLURM_ARRAY_TASK_ID}]}")
 
-
-write(sbatch.cmd,"submit-SAIGE-step1.sh")
+file<-paste0("submit_SAIGE_",opt$jobName,".sh")
+write(sbatch.cmd,file)
 cat("You can use the follow cmd to submit jobs to slurm.\n")
-cat("sbatch submit-SAIGE-step1.sh")
+cat(paste0("sbatch ",file))
