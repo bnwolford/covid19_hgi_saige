@@ -44,7 +44,7 @@ option_list <- list(
     make_option("--varianceRatioFile", type="character",default="",
                 help="path to the input file containing the variance ratio"),
     make_option("--SAIGEOutputFile", type="character", default="",
-                help="path to the output file containing the SAIGE test results"),
+                help="path to the output file containing the SAIGE test results (prefix, will have chromosome and trait appended"),
   make_option("--idstoIncludeFile",type="character", default="",
               help="path to the file with IDs to include (markerQueryFile)"),
   make_option("--idstoExcludeFile",type="character",default="",
@@ -94,10 +94,9 @@ script<-paste(sep="/",opt$codeDir,"SAIGE_step2.R")
 chromosomes <- strsplit(opt$chromList,",")[[1]]
 
 for (i in 1:length(trait.list$NAME)) {
-    output<-paste(sep="/",opt$outDir,paste0(trait.list[i],"_",opt$chrom))
     for (c in 1:length(chromosomes)) {
+        output<-paste(sep="/",opt$outDir,paste(sep="_",trait.list[i],opt$SAIGEOutputFile,paste0("chr",chromosomes[c])))
         if (opt$filetype=="BGEN"){
-                                        #for all chromosomes
             stop("BGEN not supported yet\n")
                                         #opt$bgenFileIndex
                                         #opt$bgenFile
@@ -111,11 +110,11 @@ for (i in 1:length(trait.list$NAME)) {
         } else if (opt$filetype=="VCF"){
             vcf<-gsub("\\*",chromosomes[c],opt$vcfFile)
             index<-gsub("\\*",chromosomes[c],opt$vcfFileIndex)
-            current.cmd <- paste0("jobs[",i,"]=\"/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --filetype ", opt$filetype,  " --vcfFile ", vcf," --vcfFileIndex " , index, " --vcfField  ",  opt$vcfField, " --chrom ",  chromosomes[c], " --start ",  opt$start, " --end ",  opt$end, " --GMMATmodelFile ", opt$GMMATmodelFile, " --varianceRatioFile ", opt$varianceRatioFile,"\"")
+            current.cmd <- paste0("/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --filetype ", opt$filetype,  " --vcfFile ", vcf," --vcfFileIndex " , index, " --vcfField  ",  opt$vcfField, " --chrom ",  chromosomes[c], " --start ",  opt$start, " --end ",  opt$end, " --GMMATmodelFile ", opt$GMMATmodelFile, " --varianceRatioFile ", opt$varianceRatioFile, " --SAIGEOutputFile ", output,"\"")
         } else if (opt$filetype=="SAV"){
             sav<-gsub("\\*",chromosomes[c],opt$savFile)
             index<-gsub("\\*",chromosomes[c],opt$savFileIndex)
-            current.cmd <- paste0("jobs[",i,"]=\"/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --savFile ", sav, " --savFileIndex ", index, " --chrom ",  chromosomes[c]," --GMMATmodelFile ", opt$GMMATmodelFile, " --varianceRatioFile ", opt$varianceRatioFile,"\"")
+            current.cmd <- paste0("/usr/bin/time -o ",opt$logOutDir,"/",opt$jobName,"_",i,".runinfo.txt -v Rscript ",script," --savFile ", sav, " --savFileIndex ", index, " --chrom ",  chromosomes[c]," --GMMATmodelFile ", opt$GMMATmodelFile, " --varianceRatioFile ", opt$varianceRatioFile," --SAIGEOutputFile ", output,"\"")
         } else {
             stop("Please enter SAV, VCF, BGEN, or DOS as an argument for --filetype\n")
         }
