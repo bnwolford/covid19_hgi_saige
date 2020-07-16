@@ -93,7 +93,7 @@ for (i in 1:length(trait.list.final)) {
   slurm.cmd <- c(slurm.cmd,current.cmd)
 }
 
-cat(slurm.cmd)
+#cat(slurm.cmd)
 sbatch.cmd <- c("#!/bin/bash",
 paste0("#SBATCH --array=1-",length(trait.list.final)),
 paste0("#SBATCH --job-name=",opt$jobName),
